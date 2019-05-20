@@ -17,6 +17,16 @@
         {
             "name": "10up",
             "homepage": "http://10up.com"
+        },
+        {
+            "name": "Vinicius Rezende",
+            "email": "viniciusr.nh@gmail.com",
+            "role": "Developer"
+        },
+        {
+            "name": "Thiago Benvenuto",
+            "email": "brazabr@gmail.com",
+            "role": "Developer"
         }
     ],
     "require": {
