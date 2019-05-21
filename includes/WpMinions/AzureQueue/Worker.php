@@ -2,6 +2,7 @@
 namespace WpMinions\AzureQueue;
 use WpMinions\Worker as BaseWorker;
 use MicrosoftAzure\Storage\Queue\QueueRestProxy as QueueRestProxy;
+use MicrosoftAzure\Storage\Queue\Models\ListMessagesOptions as ListMessagesOptions;
 use MicrosoftAzure\Storage\Common\Exceptions\ServiceException as ServiceException;
 use MicrosoftAzure\Storage\Queue\Models\CreateQueueOptions as CreateQueueOptions;
 
@@ -25,7 +26,9 @@ class Worker extends BaseWorker {
 
     public function work() {
         $client = $this->get_azure_client();
-        $listMessagesResult = $client->listMessages( AZURESTORAGE_QUEUE );
+        $message_options = new ListMessagesOptions();
+        $message_options->setNumberOfMessages( 1 );
+        $listMessagesResult = $client->listMessages( AZURESTORAGE_QUEUE, $message_options );
         $messages = $listMessagesResult->getQueueMessages();
         $result = false;
         $switched = false;
