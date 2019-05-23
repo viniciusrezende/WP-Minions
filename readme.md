@@ -2,7 +2,7 @@ WP Minions [![Build Status](https://travis-ci.org/10up/WP-Minions.svg?branch=mas
 ========
 
 Provides a framework for using job queues with [WordPress](http://wordpress.org/) for asynchronous task running.
-Provides an integration with [Gearman](http://gearman.org/) and [RabbitMQ](https://www.rabbitmq.com) out of the box.
+Provides an integration with [Gearman](http://gearman.org/), [RabbitMQ](https://www.rabbitmq.com) and [Azure Queue](https://azure.microsoft.com/en-us/services/storage/queues/) out of the box.
 
 <p align="center">
 <a href="http://10up.com/contact/"><img src="https://10updotcom-wpengine.s3.amazonaws.com/uploads/2016/10/10up-Github-Banner.png" width="850"></a>
@@ -36,7 +36,7 @@ if ( ! isset( $_SERVER['HTTP_HOST'] ) && defined( 'DOING_ASYNC' ) && DOING_ASYNC
 }
 ```
 
-4. Next, you'll need to choose your job queue system. Gearman and RabbitMQ are supported out of the box.
+4. Next, you'll need to choose your job queue system. Gearman, RabbitMQ and AzureQueue are supported out of the box.
 
 ### Gearman
 
@@ -151,7 +151,7 @@ Where 'n' is the number of processes you want.
 
 #### WordPress Configuration
 
-Define the `WP_MINIONS_BACKEND` constant in your ```wp-config.php```.  Valid values are `gearman` or `rabbitmq`.  If left blank, it will default to a cron client.
+Define the `WP_MINIONS_BACKEND` constant in your ```wp-config.php```.  Valid values are `gearman`, `rabbitmq` or `azurequeue`.  If left blank, it will default to a cron client.
 ```
 define( 'WP_MINIONS_BACKEND', 'gearman' );
 ```
@@ -175,6 +175,17 @@ $rabbitmq_server = array(
   'username' => 'guest',
   'password' => 'guest',
 );
+```
+
+```:php
+# AzureQueue config
+global $azurequeue_options;
+$azurequeue_options = array(
+  'connection_string'  => 'DefaultEndpointsProtocol=[http|https];AccountName=myAccountName;AccountKey=myAccountKey',
+  'queue_name'         => 'queuename',
+  'number_of_messages' => 1,
+)
+```
 
 Note: On RabbitMQ the guest/guest account is the default administrator account, RabbitMQ will only allow connections connections on that account from localhost. Connections to any non-loopback address will be denied. See the RabbitMQ manual on [user management](https://www.rabbitmq.com/rabbitmqctl.8.html#User_Management) and [Access Control](https://www.rabbitmq.com/rabbitmqctl.8.html#Access_Control) for information on adding users and allowing them access to RabbitMQ resources.
 
