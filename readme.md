@@ -184,6 +184,7 @@ $azurequeue_options = array(
   'connection_string'  => 'DefaultEndpointsProtocol=[http|https];AccountName=myAccountName;AccountKey=myAccountKey',
   'queue_name'         => 'queuename',
   'number_of_messages' => 1,
+  'gzipped'            => true,
 )
 ```
 

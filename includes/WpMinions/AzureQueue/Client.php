@@ -67,7 +67,9 @@ class Client extends BaseClient {
 			'args'    => $args,
 			'blog_id' => $this->connection->get_blog_id(),
 		);
-
+		if ( $this->connection->get_gzipped() ) {
+			return $this->connection->add_message( base64_encode( gzencode( wp_json_encode( $job_data ) ) ) );
+		}
 		return $this->connection->add_message( wp_json_encode( $job_data ) );
 	}
 }

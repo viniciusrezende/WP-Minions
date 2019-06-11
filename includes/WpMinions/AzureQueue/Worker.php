@@ -60,10 +60,13 @@ class Worker extends BaseWorker {
 		if ( is_array( $messages ) && 0 < count( $messages ) ) {
 			foreach ( $messages as $message ) {
 				$switched = false;
-
-				$job_data = json_decode( $message->getMessageText(), true );
-				$hook     = $job_data['hook'];
-				$args     = $job_data['args'];
+				if ( $this->connection->get_gzipped() ) {
+					$job_data = json_decode( gzdecode( base64_decode( $message->getMessageText() ) ), true );
+				} else {
+					$job_data = json_decode( $message->getMessageText(), true );
+				}
+				$hook = $job_data['hook'];
+				$args = $job_data['args'];
 
 				if ( function_exists( 'is_multisite' ) && is_multisite() && false !== $job_data['blog_id'] ) {
 					$blog_id = $job_data['blog_id'];

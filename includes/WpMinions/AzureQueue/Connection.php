@@ -6,6 +6,11 @@ use MicrosoftAzure\Storage\Queue\QueueRestProxy as QueueRestProxy;
 use MicrosoftAzure\Storage\Queue\Models\CreateQueueOptions as CreateQueueOptions;
 use MicrosoftAzure\Storage\Queue\Models\ListMessagesOptions as ListMessagesOptions;
 use MicrosoftAzure\Storage\Common\Exceptions\ServiceException as ServiceException;
+use MicrosoftAzure\Storage\Common\Internal\StorageServiceSettings as StorageServiceSettings;
+use MicrosoftAzure\Storage\Common\Internal\Utilities as Utilities;
+use MicrosoftAzure\Storage\Common\Internal\Authentication\SharedKeyAuthScheme as SharedKeyAuthScheme;
+use MicrosoftAzure\Storage\Common\Internal\Middlewares\CommonRequestMiddleware as CommonRequestMiddleware;
+use MicrosoftAzure\Storage\Queue\Internal\QueueResources as Resources;
 
 /**
  * AzureQueue Connection class.
@@ -43,18 +48,54 @@ class Connection {
 		$azurequeue_options = wp_parse_args(
 			$azurequeue_options,
 			array(
-				'connection_string'  => LOCALDEV_CONNECTION_STRING,
+				'connection_string'  => self::LOCALDEV_CONNECTION_STRING,
 				'queue_name'         => 'wordpress',
 				'queue_metadata'     => array(),
 				'visibility_timeout' => null,
 				'number_of_messages' => null,
+				'gzipped'            => false,
 			)
 		);
 
 		$this->options = $azurequeue_options;
 
 		try {
-			$this->connection = new QueueRestProxy( $azurequeue_options['connection_string'] );
+			$settings      = StorageServiceSettings::createFromConnectionString(
+				$azurequeue_options['connection_string']
+			);
+			$primary_uri   = Utilities::tryAddUrlScheme(
+				$settings->getQueueEndpointUri()
+			);
+			$secondary_uri = Utilities::tryAddUrlScheme(
+				$settings->getQueueSecondaryEndpointUri()
+			);
+			$queue_wrapper = new QueueRestProxy(
+				$primary_uri,
+				$secondary_uri,
+				$settings->getName(),
+				$this->options
+			);
+
+			// Getting authentication scheme.
+			if ( $settings->hasSasToken() ) {
+				$auth_scheme = new SharedAccessSignatureAuthScheme(
+					$settings->getSasToken()
+				);
+			} else {
+				$auth_scheme = new SharedKeyAuthScheme(
+					$settings->getName(),
+					$settings->getKey()
+				);
+			}
+			// Adding common request middleware.
+			$common_request_middleware = new CommonRequestMiddleware(
+				$auth_scheme,
+				Resources::STORAGE_API_LATEST_VERSION,
+				Resources::QUEUE_SDK_VERSION
+			);
+			$queue_wrapper->pushMiddleware( $common_request_middleware );
+
+			$this->connection = $queue_wrapper;
 		} catch ( ServiceException $e ) {
 			throw new \Exception( 'Could not create connection.' );
 		}
@@ -147,5 +188,24 @@ class Connection {
 		} catch ( ServiceException $e ) {
 			return false;
 		}
+	}
+
+	/**
+	 * Return is message is gzipped
+	 *
+	 * @return bool
+	 */
+	public function get_gzipped() {
+			return $this->options['gzipped'];
+	}
+
+	/**
+	 * Caches and returns the current blog id for adding to the Job meta
+	 * data. False if not a multisite install.
+	 *
+	 * @return int|false The current blog ids id.
+	 */
+	function get_blog_id() {
+		return function_exists( 'is_multisite' ) && is_multisite() ? get_current_blog_id() : false;
 	}
 }
